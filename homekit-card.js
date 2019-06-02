@@ -28,7 +28,7 @@ customElements.whenDefined('card-tools').then(() => {
   
       render() {
         return cardTools.LitHtml`
-        ${ console.log(cardTools)}
+        
        
         <div class="container" >
         <div class="card-title" >${this.config.title}</div><br>
@@ -36,15 +36,15 @@ customElements.whenDefined('card-tools').then(() => {
           <div class="homekit-card"  >
         ${this.config.entities.map(ent => {
             const stateObj = this.hass.states[ent.entity];
-            
-  
+            var type = ent.entity.split('.')[0];
+            if(type == "light"){
             return stateObj
               ? cardTools.LitHtml`
               
                   <homekit-button  
                     class=" ${stateObj.state === "off" ? 'button': 'button button-on'}" 
-                    @click="${ev => this._toggle(stateObj)}" 
-                    @ha-hold="${cardTools.popUp("title" , "message", false)}
+                    @click="${ev => this._toggle(stateObj, ent.service)}" 
+                   
                     
                    >
                   
@@ -60,30 +60,136 @@ customElements.whenDefined('card-tools').then(() => {
                   </span>
                   
                   <span class=" ${stateObj.state === "off" ? 'icon': 'icon icon-on'}">
-                    <ha-icon icon="${ent.icon || 'mdi:lightbulb'}" class=" ${ent.spin && stateObj.state === "on" ? 'spin': ""}"/>
+                    <ha-icon icon="${stateObj.attributes.icon || ent.icon || 'mdi:lightbulb'}" class=" ${ent.spin && stateObj.state === "on" ? 'spin': ""}"/>
                   </span>
                   </homekit-button
                 `
               : html`
                   <div class="not-found">Entity ${ent} not found.</div>
                 `;
+
+        }
+
+
+
+        if(type == "climate"){
+          return stateObj
+            ? cardTools.LitHtml`
+            
+                <homekit-button class="button button-on" >
+                
+                <span class=" ${stateObj.state === "off" ? 'name': 'name name-on'}" >
+                ${ent.name || stateObj.attributes.friendly_name}
+                </span>
+                <span class="circle"> </span> 
+                <span class="temp"> ${Math.round(stateObj.attributes.current_temperature)}°</span>
+                <span class=" ${stateObj.state === "off" ? 'state': 'state state-on'}">
+                ${stateObj.state}
+                  </span>
+                  <span class=" ${stateObj.state === "off" ? 'value': 'value value-on'}">
+                  ${stateObj.attributes.temperature}°
+                  </span>
+                  
+                </homekit-button
+              `
+            : html`
+                <div class="not-found">Entity ${ent} not found.</div>
+              `;
+
+      }
+      if(type == "cover"){
+        return stateObj
+          ? cardTools.LitHtml`
+            
+              <homekit-button  
+                class=" ${stateObj.state === "off" ? 'button': 'button button-on'}" 
+                @click="${ev => this._toggleCover(stateObj)}" 
+               
+                
+               >
+              
+              <span class=" ${stateObj.state === "off" ? 'name': 'name name-on'}" >
+              ${ent.name || stateObj.attributes.friendly_name}
+              </span>
+              <span class=" ${stateObj.state === "off" ? 'state': 'state state-on'}">
+              ${stateObj.state} 
+              
+              </span>
+              <span class=" ${stateObj.state === "off" ? 'value': 'value value-on'}">
+              ${Math.round(stateObj.attributes.brightness/2.55) || "" }${stateObj.attributes.brightness ? "%" : ""}
+              </span>
+              
+              <span class=" icon black">
+                <ha-icon icon="${ent.icon || stateObj.state === "open" ? 'mdi:window-open': 'mdi:window-closed'}" class=" ${ent.spin && stateObj.state === "on" ? 'spin': ""}"/>
+              </span>
+              </homekit-button
+            `
+          : html`
+              <div class="not-found">Entity ${ent} not found.</div>
+            `;
+
+    }
+    if(type == "sensor"){
+      console.log(stateObj)
+      return stateObj
+        ? cardTools.LitHtml`
+        
+            <homekit-button  
+              class=" button button-on" 
+              @click="${ev => this._toggle(stateObj, ent.service)}" 
+             >
+            
+              <span class=" name name-on" >
+              ${ent.name || stateObj.attributes.friendly_name}
+              </span>
+
+              <span class=" state state-on">
+              ${stateObj.state} ${stateObj.attributes.unit_of_measurement}
+              </span>
+          
+              <span class="icon icon-on" style="color: ${ent.color || 'black'};" >
+                <ha-icon icon="${stateObj.attributes.icon || ent.icon || 'mdi:lightbulb'}" class=" ${ent.spin && stateObj.state === "on" ? 'spin': ""}"/>
+              </span>
+
+            </homekit-button
+          `
+        : html`
+            <div class="not-found">Entity ${ent} not found.</div>
+          `;
+
+  }
           })}
           </div></div>
         `;
         
       }
-      firstUpdated() {
-        cardTools.longpress(this.shadowRoot.querySelector('homekit-button'));
-      }
+    
       getCardSize() {
             return this.config.entities.length + 1;
         }
-        _toggle(state) {
-            this.hass.callService("homeassistant", "toggle", {
+        _toggle(state, service ) {
+            this.hass.callService("homeassistant", service || "toggle", {
               entity_id: state.entity_id
             });
           }
-        
+          _toggleCover(state ) {
+            
+            if(state.state === "open"){
+              console.log(state.entity_id)
+              this.hass.callService("cover",  "close_cover", {
+                entity_id: state.entity_id
+                
+              });
+
+            }
+            if(state.state === "closed"){
+              this.hass.callService("cover",  "open_cover", {
+                entity_id: state.entity_id
+              });
+
+            }
+            
+          }
           static get styles() {
             return css`
               :host {
@@ -131,31 +237,37 @@ customElements.whenDefined('card-tools').then(() => {
                 font-size: 18px;
                 font-weight: bold;
                 color: rgba(0,0,0, 0.4); 
+                white-space: nowrap; 
+                overflow: hidden;
+                text-overflow: ellipsis;
+                width: 100px;
               }
               .name.name-on{
                 color: rgba(0,0,0, 1); 
               }
               .state{
-                position: absolute;
+                position: relative;
                 top: 90px;
-                left: 10px;
+                margin-left: 10px;
                 font-family: Arial;
                 font-size: 18px; 
                 color: rgba(0,0,0, 0.4); 
                 text-transform: capitalize;
+                float: left;
               }
               .value{
                   visibility: hidden;
               }
               .value-on{
                 visibility: visible;
-                position: absolute;
+                position: relative;
                 top: 95px;
-                left: 40px;
+                margin-left: 5px;
                 font-family: Arial;
                 font-size: 12px; 
                 color: rgba(255,0,0, 1); 
                 text-transform: capitalize;
+                float: left;
               }
               .state.state-on{
                 color: rgba(0,0,0, 1); 
@@ -171,15 +283,41 @@ customElements.whenDefined('card-tools').then(() => {
               .icon.icon-on{
                 color: #f7d959;     
               }
+              .icon.black{
+                color:rgba(0,0,0, 1);     
+              }
               ha-icon{
                 height: 100%;
                 width: 100%;
               }
+              .circle{
+                position: absolute;
+                top: 17px;
+                left: 10px; 
+                height: 35px;
+                width: 35px;  
+                background-color: rgba(0,255,0, 1);
+                border-radius: 20px;   
+              }
+              .temp{
+                position: absolute;
+                top: 26px;
+                left: 19px; 
+                font-family: Arial;
+                font-size: 14px;
+                font-weight: bold;
+                color:white;
+              }
               .not-found {
-                background-color: yellow;
-                font-family: sans-serif;
-                font-size: 20px;
-                padding: 8px;
+                cursor: pointer;
+                float: left;
+                width: 116px;
+                height: 116px;
+                background-color: rgba(255,0,0, 1);
+                border-radius: 12px;
+                box-shadow: 0px 1px 3px 0px rgba(0, 0, 0, 0.3);
+                margin: 3px;
+                position: relative;
               }
               .spin {
                 
