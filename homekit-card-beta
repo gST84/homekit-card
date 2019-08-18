@@ -11,10 +11,6 @@ import {
 customElements.whenDefined('card-tools').then(() => {
     var cardTools = customElements.get('card-tools');
     
-    // YOUR CODE GOES IN HERE
-    // /@click="${ev => this._toggle(stateObj)}"
-  //@ha-hold="${cardTools.popUp("title" , "message", false)}"
-   //@click="${ev => this._toggle(stateObj, ent.service)}" 
     class MyPlugin extends cardTools.LitElement {
        
         static get properties() {
