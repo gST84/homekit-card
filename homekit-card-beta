@@ -1,9 +1,13 @@
+
+
 import {
     LitElement,
     html,
     css
   } from "https://unpkg.com/lit-element@2.0.1/lit-element.js?module";
-document.body.innerHTML = document.body.innerHTML + "<long-press></long-press>"  ;
+  var longPress = document.createElement('long-press');
+  document.body.appendChild(longPress); 
+
 customElements.whenDefined('card-tools').then(() => {
     var cardTools = customElements.get('card-tools');
     
@@ -37,7 +41,9 @@ customElements.whenDefined('card-tools').then(() => {
         ${this.config.entities.map(ent => {
             const stateObj = this.hass.states[ent.entity];
             var type = ent.entity.split('.')[0];
+            
             if(type == "light"){
+              
             return stateObj
               ? cardTools.LitHtml`
               
@@ -68,102 +74,134 @@ customElements.whenDefined('card-tools').then(() => {
                   <div class="not-found">Entity ${ent} not found.</div>
                 `;
 
-        }
-
-
-
-        if(type == "climate"){
-          return stateObj
-            ? cardTools.LitHtml`
-            
-                <homekit-button class="button button-on"  @ha-hold="${ev => this._hold(ent,stateObj)}">
+            }
+            if(type == "fan"){
+              
+              return stateObj
+                ? cardTools.LitHtml`
                 
-                <span class=" ${stateObj.state === "off" ? 'name': 'name name-on'}" >
-                ${ent.name || stateObj.attributes.friendly_name}
-                </span>
-                <span class="circle"> </span> 
-                <span class="temp"> ${Math.round(stateObj.attributes.current_temperature)}°</span>
-                <span class=" ${stateObj.state === "off" ? 'state': 'state state-on'}">
-                ${stateObj.state}
-                  </span>
-                  <span class=" ${stateObj.state === "off" ? 'value': 'value value-on'}">
-                  ${stateObj.attributes.temperature}°
-                  </span>
+                    <homekit-button  
+                      class=" ${stateObj.state === "off" ? 'button': 'button button-on'}" 
+                      @ha-click="${ev => this._toggle(stateObj, ent.service)}" 
+                      @ha-hold="${ev => this._hold(ent,stateObj)}"
+                      
+                     >
+                    
+                    <span class=" ${stateObj.state === "off" ? 'name': 'name name-on'}" >
+                    ${ent.name || stateObj.attributes.friendly_name}
+                    </span>
+                    <span class=" ${stateObj.state === "off" ? 'state': 'state state-on'}">
+                    ${stateObj.state} 
+                    
+                    </span>
+                    <span class=" ${stateObj.state === "off" ? 'value': 'value value-on'}">
+                    ${Math.round(stateObj.attributes.brightness/2.55) || "" }${stateObj.attributes.brightness ? "%" : ""}
+                    </span>
+                    
+                    <span class=" ${stateObj.state === "off" ? 'icon': 'icon icon-on'}">
+                      <ha-icon icon="${stateObj.attributes.icon || ent.icon || 'mdi:fan'}" class=" ${stateObj.state === "on" ? 'spin': ""}"/>
+                    </span>
+                    </homekit-button>
+                  `
+                : html`
+                    <div class="not-found">Entity ${ent} not found.</div>
+                  `;
+  
+              }
+
+
+            if(type == "climate"){
+              return stateObj
+                ? cardTools.LitHtml`
+                
+                    <homekit-button class="button button-on"  @ha-hold="${ev => this._hold(ent,stateObj)}">
+                    
+                    <span class=" ${stateObj.state === "off" ? 'name': 'name name-on'}" >
+                    ${ent.name || stateObj.attributes.friendly_name}
+                    </span>
+                    <span class="circle"> </span> 
+                    <span class="temp"> ${Math.round(stateObj.attributes.current_temperature)}°</span>
+                    <span class=" ${stateObj.state === "off" ? 'state': 'state state-on'}">
+                    ${stateObj.state}
+                      </span>
+                      <span class=" ${stateObj.state === "off" ? 'value': 'value value-on'}">
+                      ${stateObj.attributes.temperature}°
+                      </span>
+                      
+                    </homekit-button>
+                  `
+                : html`
+                    <div class="not-found">Entity ${ent} not found.</div>
+                  `;
+
+            }
+            if(type == "cover"){
+              return stateObj
+                ? cardTools.LitHtml`
                   
-                </homekit-button>
-              `
-            : html`
-                <div class="not-found">Entity ${ent} not found.</div>
-              `;
+                    <homekit-button  
+                      class=" ${stateObj.state === "off" ? 'button': 'button button-on'}" 
+                      @ha-click="${ev => this._toggleCover(stateObj)}" 
+                      @ha-hold="${ev => this._hold(ent,stateObj)}"
+                      
+                    >
+                    
+                    <span class=" ${stateObj.state === "off" ? 'name': 'name name-on'}" >
+                    ${ent.name || stateObj.attributes.friendly_name}
+                    </span>
+                    <span class=" ${stateObj.state === "off" ? 'state': 'state state-on'}">
+                    ${stateObj.state} 
+                    
+                    </span>
+                    <span class=" ${stateObj.state === "off" ? 'value': 'value value-on'}">
+                    ${Math.round(stateObj.attributes.brightness/2.55) || "" }${stateObj.attributes.brightness ? "%" : ""}
+                    </span>
+                    
+                    <span class=" icon black">
+                      <ha-icon icon="${ent.icon || stateObj.state === "open" ? 'mdi:window-open': 'mdi:window-closed'}" class=" ${ent.spin && stateObj.state === "on" ? 'spin': ""}"/>
+                    </span>
+                    </homekit-button>
+                  `
+                : html`
+                    <div class="not-found">Entity ${ent} not found.</div>
+                  `;
 
-      }
-      if(type == "cover"){
-        return stateObj
-          ? cardTools.LitHtml`
-            
-              <homekit-button  
-                class=" ${stateObj.state === "off" ? 'button': 'button button-on'}" 
-                @ha-click="${ev => this._toggleCover(stateObj)}" 
-                @ha-hold="${ev => this._hold(ent,stateObj)}"
+            }
+            if(type == "sensor" || type == "binary_sensor"){
+              //console.log(stateObj)
+              return stateObj
+                ? cardTools.LitHtml`
                 
-               >
-              
-              <span class=" ${stateObj.state === "off" ? 'name': 'name name-on'}" >
-              ${ent.name || stateObj.attributes.friendly_name}
-              </span>
-              <span class=" ${stateObj.state === "off" ? 'state': 'state state-on'}">
-              ${stateObj.state} 
-              
-              </span>
-              <span class=" ${stateObj.state === "off" ? 'value': 'value value-on'}">
-              ${Math.round(stateObj.attributes.brightness/2.55) || "" }${stateObj.attributes.brightness ? "%" : ""}
-              </span>
-              
-              <span class=" icon black">
-                <ha-icon icon="${ent.icon || stateObj.state === "open" ? 'mdi:window-open': 'mdi:window-closed'}" class=" ${ent.spin && stateObj.state === "on" ? 'spin': ""}"/>
-              </span>
-              </homekit-button>
-            `
-          : html`
-              <div class="not-found">Entity ${ent} not found.</div>
-            `;
+                    <homekit-button  
+                      class=" button button-on" 
 
-    }
-    if(type == "sensor"){
-      //console.log(stateObj)
-      return stateObj
-        ? cardTools.LitHtml`
-        
-            <homekit-button  
-              class=" button button-on" 
+                      @ha-hold="${ev => this._hold(ent,stateObj)}"
+                    >
+                    
+                      <span class=" name name-on" >
+                      ${ent.name || stateObj.attributes.friendly_name}
+                      </span>
 
-              @ha-hold="${ev => this._hold(ent,stateObj)}"
-             >
-            
-              <span class=" name name-on" >
-              ${ent.name || stateObj.attributes.friendly_name}
-              </span>
+                      <span class=" state state-on">
+                      ${stateObj.state} ${stateObj.attributes.unit_of_measurement}
+                      </span>
+                  
+                      <span class="icon icon-on" style="color: ${ent.color || 'black'};" >
+                        <ha-icon icon="${stateObj.attributes.icon || ent.icon || 'mdi:lightbulb'}" class=" ${ent.spin && stateObj.state === "on" ? 'spin': ""}"/>
+                      </span>
 
-              <span class=" state state-on">
-              ${stateObj.state} ${stateObj.attributes.unit_of_measurement}
-              </span>
-          
-              <span class="icon icon-on" style="color: ${ent.color || 'black'};" >
-                <ha-icon icon="${stateObj.attributes.icon || ent.icon || 'mdi:lightbulb'}" class=" ${ent.spin && stateObj.state === "on" ? 'spin': ""}"/>
-              </span>
+                    </homekit-button>
+                  `
+                : html`
+                    <div class="not-found">Entity ${ent} not found.</div>
+                  `;
 
-            </homekit-button>
-          `
-        : html`
-            <div class="not-found">Entity ${ent} not found.</div>
-          `;
-
-  }
-          })}
-          </div></div>
-        `;
-        
-      }
+            }
+                  })}
+                  </div></div>
+                `;
+                
+              }
       firstUpdated() {
         var myNodelist = this.shadowRoot.querySelectorAll('homekit-button')
         for (var i = 0; i < myNodelist.length; i++) {
@@ -242,7 +280,7 @@ customElements.whenDefined('card-tools').then(() => {
          
           _toggleCover(state ) {
             
-            if(state.state === "open" ){
+            if(state.state === "open" || state.state === "unknown" ){
               
               this.hass.callService("cover",  "close_cover", {
                 entity_id: state.entity_id
@@ -250,7 +288,7 @@ customElements.whenDefined('card-tools').then(() => {
               });
 
             }
-            if(state.state === "closed" ){
+            if(state.state === "closed"   ){
               this.hass.callService("cover",  "open_cover", {
                 entity_id: state.entity_id
               });
